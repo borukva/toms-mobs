@@ -26,6 +26,8 @@ import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.RailBlock;
+import net.minecraft.world.level.block.state.properties.RailShape;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.Team;
 import org.jetbrains.annotations.Nullable;
@@ -78,8 +80,8 @@ public class TomsMobsGameTests {
 
     // Same scenario through the real AI loop. A sculkling only trips when its target dies right before a tick where
     // the goal runs unchecked (every other tick) outside the swing animation (about half the time). Sculklings spawned
-    // together share that tick phase, so the targets die one per tick to hit every phase.
-    @GameTest(maxTicks = 200)
+    // together share that tick phase, so the targets die one at a time, each once its own sculkling is swinging.
+    @GameTest(maxTicks = 600)
     public void sculklingsSurviveTargetsDyingMidFight(GameTestHelper helper) {
         floor(helper);
         List<Sculkling> sculklings = new ArrayList<>();
@@ -94,11 +96,15 @@ public class TomsMobsGameTests {
             }
         }
 
-        // MeleeAttackGoal won't start in the first 20 game ticks, so wait until most of them are really swinging
-        var sequence = helper.startSequence()
-                .thenWaitUntil(() -> helper.assertTrue(sculklings.stream().filter(Mob::isAggressive).count() >= 12, "sculklings are not attacking yet"));
-        for (Mob target : targets) {
-            sequence = sequence.thenExecute(() -> target.kill(helper.getLevel())).thenIdle(1);
+        // MeleeAttackGoal won't start in the first 20 game ticks and wandering interrupts it now and then
+        var sequence = helper.startSequence();
+        for (int i = 0; i < targets.size(); i++) {
+            Sculkling sculkling = sculklings.get(i);
+            Mob target = targets.get(i);
+            sequence = sequence
+                    .thenWaitUntil(() -> helper.assertTrue(sculkling.isAggressive(), "sculkling is not attacking"))
+                    .thenExecute(() -> target.kill(helper.getLevel()))
+                    .thenIdle(1);
         }
         sequence.thenExecuteAfter(20, () -> helper.assertTrue(sculklings.stream().allMatch(Entity::isAlive), "a sculkling went missing"))
                 .thenSucceed();
@@ -121,22 +127,53 @@ public class TomsMobsGameTests {
         });
     }
 
-    // Boats saved in the world before the fix still carry butterflies as passengers.
+    // A moving minecart picks up whatever it could push, so it has to roll right through the flyers.
+    @GameTest(maxTicks = 100)
+    public void minecartsDoNotPickUpFlyers(GameTestHelper helper) {
+        floor(helper);
+        List<Mob> flyers = new ArrayList<>();
+        for (int i = 0; i < FLYERS.size(); i++) {
+            int z = 1 + 2 * i;
+            for (int x = 0; x < 8; x++) {
+                helper.setBlock(x, 1, z, Blocks.RAIL.defaultBlockState().setValue(RailBlock.SHAPE, RailShape.EAST_WEST));
+            }
+            Entity minecart = helper.spawn(EntityTypes.MINECART, new Vec3(0.5, 1, z + 0.5));
+            minecart.setDeltaMovement(0.3, 0, 0);
+            flyers.add(helper.spawnWithNoFreeWill(FLYERS.get(i), new Vec3(4.5, 1, z + 0.5)));
+        }
+
+        helper.runAfterDelay(40, () -> {
+            List<String> seated = flyers.stream().filter(Entity::isPassenger).map(TomsMobsGameTests::name).toList();
+            helper.assertTrue(seated.isEmpty(), "picked up by a minecart: " + seated);
+            helper.succeed();
+        });
+    }
+
+    // Vehicles saved in the world before the fix still carry flyers as passengers.
     @GameTest(maxTicks = 100)
     public void flyersAlreadyInBoatsGetOut(GameTestHelper helper) {
+        flyersGetOutOf(helper, EntityTypes.OAK_BOAT);
+    }
+
+    @GameTest(maxTicks = 100)
+    public void flyersAlreadyInMinecartsGetOut(GameTestHelper helper) {
+        flyersGetOutOf(helper, EntityTypes.MINECART);
+    }
+
+    private static void flyersGetOutOf(GameTestHelper helper, EntityType<?> vehicleType) {
         floor(helper);
         List<Mob> flyers = new ArrayList<>();
         for (int i = 0; i < FLYERS.size(); i++) {
             Vec3 pos = new Vec3(1.5 + 2 * i, 1, 4.5);
-            Entity boat = helper.spawn(EntityTypes.OAK_BOAT, pos);
+            Entity vehicle = helper.spawn(vehicleType, pos);
             Mob flyer = helper.spawnWithNoFreeWill(FLYERS.get(i), pos);
-            helper.assertTrue(flyer.startRiding(boat, true, true), "could not seat " + name(flyer));
+            helper.assertTrue(flyer.startRiding(vehicle, true, true), "could not seat " + name(flyer));
             flyers.add(flyer);
         }
 
         helper.runAfterDelay(5, () -> {
             List<String> seated = flyers.stream().filter(Entity::isPassenger).map(TomsMobsGameTests::name).toList();
-            helper.assertTrue(seated.isEmpty(), "still sitting in a boat: " + seated);
+            helper.assertTrue(seated.isEmpty(), "still sitting in " + vehicleType.getDescription().getString() + ": " + seated);
             helper.succeed();
         });
     }

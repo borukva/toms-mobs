@@ -24,18 +24,19 @@ import net.minecraft.world.entity.EntitySelector;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.RailBlock;
 import net.minecraft.world.level.block.state.properties.RailShape;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.scores.PlayerTeam;
+import net.minecraft.world.scores.Scoreboard;
 import net.minecraft.world.scores.Team;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 public class TomsMobsGameTests {
@@ -90,6 +91,9 @@ public class TomsMobsGameTests {
             for (int x : new int[]{0, 4}) {
                 Sculkling sculkling = helper.spawn(MobRegistry.SCULKLING, x, 1, z);
                 Mob target = helper.spawnWithNoFreeWill(EntityTypes.VILLAGER, x + 1, 1, z);
+                // sturdy enough that its sculkling can't beat it to death while earlier pairs are still waiting
+                target.getAttribute(Attributes.MAX_HEALTH).setBaseValue(1000);
+                target.setHealth(1000);
                 sculkling.setTarget(target);
                 sculklings.add(sculkling);
                 targets.add(target);
@@ -273,20 +277,28 @@ public class TomsMobsGameTests {
         }
     }
 
+    // Replays the team packets the way ClientPacketListener#handleSetPlayerTeamPacket does: anything aimed at a team
+    // the client never got an ADD for is dropped, so the team has to be created before it can be changed or joined.
     private static boolean inNoCollisionTeam(List<Packet<?>> sent, UUID entity) {
-        Set<String> noCollisionTeams = new HashSet<>();
-        String teamOfEntity = null;
+        Scoreboard client = new Scoreboard();
         for (Packet<?> packet : sent) {
-            if (!(packet instanceof ClientboundSetPlayerTeamPacket team)) {
+            if (!(packet instanceof ClientboundSetPlayerTeamPacket teamPacket)) {
                 continue;
             }
-            team.getParameters()
-                    .filter(parameters -> parameters.collisionRule() == Team.CollisionRule.NEVER)
-                    .ifPresent(parameters -> noCollisionTeams.add(team.getName()));
-            if (team.getPlayerAction() == ClientboundSetPlayerTeamPacket.Action.ADD && team.getPlayers().contains(entity.toString())) {
-                teamOfEntity = team.getName();
+            PlayerTeam team = teamPacket.getTeamAction() == ClientboundSetPlayerTeamPacket.Action.ADD
+                    ? client.addPlayerTeam(teamPacket.getName())
+                    : client.getPlayerTeam(teamPacket.getName());
+            if (team == null) {
+                continue;
+            }
+            teamPacket.getParameters().ifPresent(parameters -> team.setCollisionRule(parameters.collisionRule()));
+            if (teamPacket.getPlayerAction() == ClientboundSetPlayerTeamPacket.Action.ADD) {
+                teamPacket.getPlayers().forEach(name -> client.addPlayerToTeam(name, team));
+            } else if (teamPacket.getPlayerAction() == ClientboundSetPlayerTeamPacket.Action.REMOVE) {
+                teamPacket.getPlayers().forEach(name -> client.removePlayerFromTeam(name, team));
             }
         }
-        return teamOfEntity != null && noCollisionTeams.contains(teamOfEntity);
+        PlayerTeam team = client.getPlayersTeam(entity.toString());
+        return team != null && team.getCollisionRule() == Team.CollisionRule.NEVER;
     }
 }

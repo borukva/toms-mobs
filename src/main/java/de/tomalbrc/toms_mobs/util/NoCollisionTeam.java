@@ -32,7 +32,8 @@ public final class NoCollisionTeam {
 
     public static void add(ServerGamePacketListenerImpl player, UUID entity, Consumer<Packet<ClientGamePacketListener>> consumer) {
         if (TEAM_SENT.add(player)) {
-            consumer.accept(ClientboundSetPlayerTeamPacket.createAddOrModifyPacket(TEAM, false));
+            // true creates the team; false would only modify it, and the client drops changes to teams it doesn't have
+            consumer.accept(ClientboundSetPlayerTeamPacket.createAddOrModifyPacket(TEAM, true));
         }
         // Never followed by a removal: the client throws when asked to remove an entry it doesn't have, which
         // drops the connection. Stale entries only cost a string each and are gone on reconnect.

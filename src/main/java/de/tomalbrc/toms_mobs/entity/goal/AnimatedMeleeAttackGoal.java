@@ -95,14 +95,16 @@ public class AnimatedMeleeAttackGoal extends AnimatedGoal {
     }
 
     protected void performAttack(ServerLevel serverLevel, LivingEntity livingEntity) {
-        if (this.canAttack()) {
+        if (livingEntity != null && this.canAttack()) {
             this.mob.doHurtTarget(serverLevel, livingEntity);
         }
         attack = false;
     }
 
     protected boolean canAttack() {
+        // getTarget() hides dead, creative and spectator targets, and every other tick this goal is ticked
+        // without canContinueToUse() being checked first, so the target can already be gone here
         LivingEntity target = this.mob.getTarget();
-        return this.mob.isWithinMeleeAttackRange(target) && this.mob.getSensing().hasLineOfSight(target);
+        return target != null && this.mob.isWithinMeleeAttackRange(target) && this.mob.getSensing().hasLineOfSight(target);
     }
 }

@@ -10,6 +10,7 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -20,6 +21,7 @@ import net.minecraft.world.entity.ai.goal.TemptGoal;
 import net.minecraft.world.entity.ai.navigation.PathNavigation;
 import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.vehicle.VehicleEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
@@ -85,6 +87,30 @@ public abstract class AbstractButterfly extends Animal implements AnimatedEntity
         this.goalSelector.addGoal(3, new FollowButterflyGoal(this));
         this.goalSelector.addGoal(4, new FlyingWanderGoal(this));
 
+    }
+
+    @Override
+    public void tick() {
+        super.tick();
+
+        // boats and minecarts used to scoop butterflies up, so saved worlds still have some sitting in them
+        if (this.getVehicle() instanceof VehicleEntity && !this.level().isClientSide()) {
+            this.stopRiding();
+        }
+    }
+
+    // Like vanilla bats: nothing pushes them and they push nothing, which also keeps boats and minecarts from picking them up
+    @Override
+    public boolean isPushable() {
+        return false;
+    }
+
+    @Override
+    protected void doPush(@NotNull Entity entity) {
+    }
+
+    @Override
+    protected void pushEntities() {
     }
 
     @Override

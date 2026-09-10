@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "toms_mobs-gametest",
+  "version": "1.0.0",
+  "name": "Tom's Mobs GameTests",
+  "environment": "*",
+  "entrypoints": {
+    "fabric-gametest": [
+      "de.tomalbrc.toms_mobs.test.TomsMobsGameTests"
+    ]
+  },
+  "depends": {
+    "toms_mobs": "*"
+  }
+}

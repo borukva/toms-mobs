@@ -11,6 +11,15 @@ loom {
     accessWidenerPath = file("src/main/resources/toms_mobs.accesswidener")
 }
 
+fabricApi {
+    configureTests {
+        createSourceSet = true
+        modId = "toms_mobs-gametest"
+        enableClientGameTests = false
+        eula = true
+    }
+}
+
 repositories {
     maven { url 'https://maven.nucleoid.xyz' }
     maven { url 'https://maven.tomalbrc.de' }

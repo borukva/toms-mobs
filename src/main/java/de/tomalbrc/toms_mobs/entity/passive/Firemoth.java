@@ -2,10 +2,10 @@ package de.tomalbrc.toms_mobs.entity.passive;
 
 import de.tomalbrc.bil.api.AnimatedEntity;
 import de.tomalbrc.bil.core.holder.entity.EntityHolder;
-import de.tomalbrc.bil.core.holder.entity.living.LivingEntityHolder;
 import de.tomalbrc.bil.core.model.Model;
 import de.tomalbrc.toms_mobs.entity.goal.flying.FlyingWanderGoal;
 import de.tomalbrc.toms_mobs.util.AnimationHelper;
+import de.tomalbrc.toms_mobs.util.NoPushLivingEntityHolder;
 import de.tomalbrc.toms_mobs.util.Util;
 import eu.pb4.polymer.virtualentity.api.attachment.EntityAttachment;
 import net.minecraft.core.BlockPos;
@@ -18,6 +18,7 @@ import net.minecraft.util.ARGB;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.AgeableMob;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
@@ -27,6 +28,7 @@ import net.minecraft.world.entity.ai.control.FlyingMoveControl;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
 import net.minecraft.world.entity.ai.navigation.PathNavigation;
 import net.minecraft.world.entity.animal.Animal;
+import net.minecraft.world.entity.vehicle.VehicleEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
@@ -69,7 +71,7 @@ public class Firemoth extends Animal implements AnimatedEntity {
         this.setPathfindingMalus(PathType.COCOA, -1.0F);
         this.setPathfindingMalus(PathType.FENCE, -1.0F);
 
-        this.holder = new LivingEntityHolder<>(this, MODEL);
+        this.holder = new NoPushLivingEntityHolder<>(this, MODEL);
         this.holder.getAnimator().playAnimation("idle");
 
         EntityAttachment.ofTicking(this.holder, this);
@@ -102,6 +104,25 @@ public class Firemoth extends Animal implements AnimatedEntity {
         if (this.tickCount % 8 == 3 && this.level() instanceof ServerLevel serverLevel) {
             serverLevel.sendParticles(new DustParticleOptions(ARGB.colorFromFloat(1.f, 1.f, .4f, 0.f), 0.9f), getX(), getY() + 0.2, getZ(), 4, 0.04, 0.04, 0.04, 0.3);
         }
+
+        // boats and minecarts used to scoop firemoths up, so saved worlds still have some sitting in them
+        if (this.getVehicle() instanceof VehicleEntity && !this.level().isClientSide()) {
+            this.stopRiding();
+        }
+    }
+
+    // Like vanilla bats: nothing pushes them and they push nothing, which also keeps boats and minecarts from picking them up
+    @Override
+    public boolean isPushable() {
+        return false;
+    }
+
+    @Override
+    protected void doPush(@NotNull Entity entity) {
+    }
+
+    @Override
+    protected void pushEntities() {
     }
 
     @Override

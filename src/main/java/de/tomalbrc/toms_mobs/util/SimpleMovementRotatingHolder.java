@@ -1,7 +1,6 @@
 package de.tomalbrc.toms_mobs.util;
 
 import de.tomalbrc.bil.api.AnimatedEntity;
-import de.tomalbrc.bil.core.holder.entity.living.LivingEntityHolder;
 import de.tomalbrc.bil.core.holder.wrapper.DisplayWrapper;
 import de.tomalbrc.bil.core.model.Model;
 import de.tomalbrc.bil.core.model.Pose;
@@ -12,7 +11,8 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
-public class SimpleMovementRotatingHolder<T extends LivingEntity & AnimatedEntity> extends LivingEntityHolder<T> {
+// only butterflies use this one, and they shouldn't push players
+public class SimpleMovementRotatingHolder<T extends LivingEntity & AnimatedEntity> extends NoPushLivingEntityHolder<T> {
     private float lastYaw = 0.f;
     private float lastPitch = 0.f;
 

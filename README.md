@@ -21,6 +21,19 @@ Check out the setup to automatically share the resourcepack here [https://polyme
 
 The entities are available under the namespace `toms_mobs` (`toms_mobs:elephant`, etc.)
 
+## Butterfly population
+
+Natural butterfly spawns use a reduced spawn chance and small groups. Existing populations are gradually limited per loaded area with these options in `config/toms_mobs.json`:
+
+```json
+{
+  "butterflyDensityLimit": 8,
+  "butterflyDensityRadius": 64
+}
+```
+
+The radius is clamped between 16 and 128 blocks. Set `butterflyDensityLimit` below zero to disable population cleanup. Named, leashed, breeding, and emperor butterflies are never removed by the cleanup.
+
 ---
 
 # Mobs

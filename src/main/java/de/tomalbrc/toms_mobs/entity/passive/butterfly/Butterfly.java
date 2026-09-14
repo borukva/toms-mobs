@@ -1,6 +1,7 @@
 package de.tomalbrc.toms_mobs.entity.passive.butterfly;
 
 import de.tomalbrc.bil.core.model.Model;
+import de.tomalbrc.toms_mobs.config.ModConfig;
 import de.tomalbrc.toms_mobs.registry.MobRegistry;
 import de.tomalbrc.toms_mobs.util.SimpleMovementRotatingHolder;
 import de.tomalbrc.toms_mobs.util.Util;
@@ -23,6 +24,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class Butterfly extends AbstractButterfly {
+    private static final int NATURAL_SPAWN_CHANCE = 10;
+    private static final int DENSITY_CHECK_INTERVAL = 200;
+
     public static final Identifier ID = Util.id("butterfly");
     public static final Model MODEL = Util.loadModel(ID);
 
@@ -38,11 +42,32 @@ public class Butterfly extends AbstractButterfly {
 
 
     public static boolean checkButterflySpawnRules(EntityType<? extends @NotNull Mob> type, LevelAccessor level, EntitySpawnReason spawnReason, BlockPos pos, RandomSource random) {
-        return level.canSeeSky(pos) && !level.getBlockState(pos.below()).getFluidState().is(FluidTags.WATER);
+        boolean naturalSpawn = spawnReason == EntitySpawnReason.NATURAL || spawnReason == EntitySpawnReason.CHUNK_GENERATION;
+        return (!naturalSpawn || random.nextInt(NATURAL_SPAWN_CHANCE) == 0)
+                && level.canSeeSky(pos)
+                && !level.getBlockState(pos.below()).getFluidState().is(FluidTags.WATER);
     }
 
     public Butterfly(EntityType<? extends @NotNull Animal> entityType, Level level) {
         super(entityType, level);
+    }
+
+    @Override
+    public void customServerAiStep(@NotNull ServerLevel serverLevel) {
+        super.customServerAiStep(serverLevel);
+
+        ModConfig config = ModConfig.getInstance();
+        int limit = config.butterflyDensityLimit;
+        if (limit < 0 || this.hasCustomName() || this.isLeashed() || this.isInLove()) return;
+        if (Math.floorMod(this.getId(), DENSITY_CHECK_INTERVAL) != this.tickCount % DENSITY_CHECK_INTERVAL) return;
+
+        int radius = Math.max(16, Math.min(config.butterflyDensityRadius, 128));
+        int nearbyButterflies = serverLevel.getEntitiesOfClass(
+                Butterfly.class,
+                this.getBoundingBox().inflate(radius),
+                Butterfly::isAlive
+        ).size();
+        if (nearbyButterflies > limit) this.discard();
     }
 
     protected void setupModel() {

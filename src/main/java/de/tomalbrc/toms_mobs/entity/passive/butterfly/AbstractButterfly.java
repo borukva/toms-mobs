@@ -91,6 +91,11 @@ public abstract class AbstractButterfly extends Animal implements AnimatedEntity
 
     @Override
     public void tick() {
+        // Keep the entity types readable in saved worlds, but remove all disabled insects without drops.
+        if (!this.level().isClientSide()) {
+            this.discard();
+            return;
+        }
         super.tick();
 
         // boats and minecarts used to scoop butterflies up, so saved worlds still have some sitting in them

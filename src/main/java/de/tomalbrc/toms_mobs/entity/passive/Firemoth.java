@@ -95,6 +95,10 @@ public class Firemoth extends Animal implements AnimatedEntity {
 
     @Override
     public void tick() {
+        if (!this.level().isClientSide()) {
+            this.discard();
+            return;
+        }
         super.tick();
 
         if (this.tickCount % 2 == 0) {

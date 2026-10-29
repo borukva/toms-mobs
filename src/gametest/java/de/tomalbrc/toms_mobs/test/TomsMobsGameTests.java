@@ -6,11 +6,13 @@ import de.tomalbrc.bil.core.element.CollisionElement;
 import de.tomalbrc.toms_mobs.entity.goal.AnimatedMeleeAttackGoal;
 import de.tomalbrc.toms_mobs.entity.hostile.Sculkling;
 import de.tomalbrc.toms_mobs.registry.MobRegistry;
+import de.tomalbrc.toms_mobs.util.Util;
 import eu.pb4.polymer.virtualentity.api.ElementHolder;
 import io.netty.channel.ChannelFutureListener;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.Connection;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.BundlePacket;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.PacketFlow;
@@ -41,6 +43,26 @@ import java.util.UUID;
 
 public class TomsMobsGameTests {
     private static final List<EntityType<? extends Mob>> FLYERS = List.of(MobRegistry.BUTTERFLY, MobRegistry.EMPEROR_BUTTERFLY, MobRegistry.FIREMOTH);
+
+    @GameTest(maxTicks = 20)
+    public void disabledInsectsAreRemovedEvenWhenNamed(GameTestHelper helper) {
+        List<Mob> insects = new ArrayList<>();
+        for (int i = 0; i < FLYERS.size(); i++) {
+            EntityType<? extends Mob> type = FLYERS.get(i);
+            var id = EntityType.getKey(type);
+            helper.assertTrue(MobRegistry.isDisabledInsect(id), "insect spawns must be disabled: " + id);
+            helper.assertTrue(!MobRegistry.SPAWN_EGGS.containsKey(Util.id(id.getPath() + "_spawn_egg")), "disabled insect has a spawn egg: " + id);
+            Mob insect = helper.spawn(type, new Vec3(1.5 + 2 * i, 1, 1.5));
+            insect.setCustomName(Component.literal("Saved insect"));
+            insect.setPersistenceRequired();
+            insects.add(insect);
+        }
+        helper.assertTrue(!MobRegistry.isDisabledInsect(EntityType.getKey(MobRegistry.PENGUIN)), "other mobs must remain enabled");
+        helper.runAfterDelay(2, () -> {
+            helper.assertTrue(insects.stream().allMatch(Entity::isRemoved), "a disabled insect survived");
+            helper.succeed();
+        });
+    }
 
     // The Borukva Main crash: the sculkling's target died mid-attack, so getTarget() went null while the goal kept ticking.
     @GameTest

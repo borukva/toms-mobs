@@ -25,7 +25,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.RegistryOps;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.server.RegistryLayer;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.*;
@@ -67,7 +66,7 @@ public class MobRegistry {
 
     public static final EntityType<@NotNull Tuna> TUNA = register(Tuna.ID, FabricEntityType.Builder.createMob(Tuna::new, MobCategory.WATER_AMBIENT, x -> x.defaultAttributes(Tuna::createAttributes).spawnPlacement(SpawnPlacementTypes.IN_WATER, Heightmap.Types.OCEAN_FLOOR, Tuna::checkDeepWaterSpawnRules)).sized(0.55f, 0.55f));
 
-    public static final EntityType<@NotNull Lobster> LOBSTER = register(Lobster.ID, FabricEntityType.Builder.createMob(Lobster::new, MobCategory.WATER_CREATURE, x -> x.defaultAttributes(Lobster::createAttributes).spawnPlacement(SpawnPlacementTypes.NO_RESTRICTIONS, Heightmap.Types.OCEAN_FLOOR, (xx, levelAccessor, z, blockPos, r) -> r.nextInt(4) == 2 && blockPos.getY() < levelAccessor.getSeaLevel() + 3 && (TurtleEggBlock.onSand(levelAccessor, blockPos) || levelAccessor.getBlockState(blockPos).getFluidState().is(FluidTags.WATER)) && levelAccessor.getRawBrightness(blockPos, 0) > 1)).sized(0.65f, 0.35f));
+    public static final EntityType<@NotNull Lobster> LOBSTER = register(Lobster.ID, FabricEntityType.Builder.createMob(Lobster::new, MobCategory.WATER_CREATURE, x -> x.defaultAttributes(Lobster::createAttributes).spawnPlacement(SpawnPlacementTypes.NO_RESTRICTIONS, Heightmap.Types.OCEAN_FLOOR, (_, levelAccessor, _, blockPos, r) -> r.nextInt(4) == 2 && blockPos.getY() < levelAccessor.getSeaLevel() + 3 && (TurtleEggBlock.onSand(levelAccessor, blockPos) || levelAccessor.getBlockState(blockPos).getFluidState().is(FluidTags.WATER)) && levelAccessor.getRawBrightness(blockPos, 0) > 1)).sized(0.65f, 0.35f));
 
     /*
     public static final EntityType<Jellyfish> JELLYFISH = register(
@@ -115,6 +114,8 @@ public class MobRegistry {
         if (res.hasResultOrPartial()) {
             var list = res.getPartialOrThrow().getFirst();
             for (ConfiguredSpawn config : list) {
+                // Ignore disabled insects even when an older config still contains their spawns.
+                if (isDisabledInsect(config.mob())) continue;
                 List<Holder<@NotNull Biome>> biomes = new ArrayList<>();
 
                 for (String biome : config.biomes()) {
@@ -135,10 +136,7 @@ public class MobRegistry {
     public static void registerContent() {
         addSpawnEgg(PENGUIN, Items.POLAR_BEAR_SPAWN_EGG);
         addSpawnEggModeled(ELEPHANT, Util.id("elephant_spawn_egg"));
-        addSpawnEgg(FIREMOTH, Items.PARROT_SPAWN_EGG);
         addSpawnEgg(SEAGULL, Items.CAT_SPAWN_EGG);
-        addSpawnEgg(BUTTERFLY, Items.ENDER_DRAGON_SPAWN_EGG);
-        addSpawnEgg(EMPEROR_BUTTERFLY, Items.ENDER_DRAGON_SPAWN_EGG);
         addSpawnEgg(POSSUM, Items.CAMEL_SPAWN_EGG);
         addSpawnEggModeled(CAPYBARA, Util.id("capybara_spawn_egg"));
 
@@ -157,6 +155,10 @@ public class MobRegistry {
         PolymerCreativeModeTabUtils.registerPolymerCreativeModeTab(Util.id("spawn-eggs"), ITEM_GROUP);
     }
 
+    public static boolean isDisabledInsect(Identifier id) {
+        return id.equals(Butterfly.ID) || id.equals(Util.id("emperor_butterfly")) || id.equals(Firemoth.ID);
+    }
+
     private static void addSpawnEggModeled(EntityType<? extends @NotNull Mob> type, Identifier model) {
         register(Util.id(EntityType.getKey(type).getPath() + "_spawn_egg"), properties -> new TexturedPolymerSpawnEggItem(type, properties, model));
     }
@@ -172,5 +174,5 @@ public class MobRegistry {
     }
 
     public static final Object2ObjectOpenHashMap<Identifier, Item> SPAWN_EGGS = new Object2ObjectOpenHashMap<>();
-    public static final CreativeModeTab ITEM_GROUP = new CreativeModeTab.Builder(CreativeModeTab.Row.TOP, -1).title(Component.literal("Toms Mobs").withStyle(ChatFormatting.DARK_GREEN)).icon(Items.BAT_SPAWN_EGG::getDefaultInstance).displayItems((parameters, output) -> SPAWN_EGGS.values().forEach(output::accept)).build();
+    public static final CreativeModeTab ITEM_GROUP = new CreativeModeTab.Builder(CreativeModeTab.Row.TOP, -1).title(Component.literal("Toms Mobs").withStyle(ChatFormatting.DARK_GREEN)).icon(Items.BAT_SPAWN_EGG::getDefaultInstance).displayItems((_, output) -> SPAWN_EGGS.values().forEach(output::accept)).build();
 }

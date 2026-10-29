@@ -21,18 +21,9 @@ Check out the setup to automatically share the resourcepack here [https://polyme
 
 The entities are available under the namespace `toms_mobs` (`toms_mobs:elephant`, etc.)
 
-## Butterfly population
+## Disabled insects
 
-Natural butterfly spawns use a reduced spawn chance and small groups. Existing populations are gradually limited per loaded area with these options in `config/toms_mobs.json`:
-
-```json
-{
-  "butterflyDensityLimit": 8,
-  "butterflyDensityRadius": 64
-}
-```
-
-The radius is clamped between 16 and 128 blocks. Set `butterflyDensityLimit` below zero to disable population cleanup. Named, leashed, breeding, and emperor butterflies are never removed by the cleanup.
+Butterflies, emperor butterflies, and firemoths are disabled, including spawns from existing configuration files. Existing individuals (including named or leashed ones) are removed without drops when their chunks tick. Their spawn eggs are no longer registered, and the emperor wing pattern is hidden from the creative tab with its recipe and loot removed. Entity types and the wing-pattern item remain registered for saved-world compatibility. Legacy butterfly density settings no longer affect this behavior.
 
 ---
 
@@ -60,21 +51,6 @@ The radius is clamped between 16 and 128 blocks. Set `butterflyDensityLimit` bel
 - **Type:** Passive
 - It's a poppy! Don't pet it, it will not like it. (okay maybe a little)
 - **Spawns in:** Forests
-
----
-
-### Firemoths
-- **Type:** Passive
-- Adds atmosphere to the Nether.
-- **Spawns in:** All Nether biomes (except Basalt Deltas)
-
----
-
-### Butterfly
-- **Type:** Passive
-- Appear in a variety of colors and bred. They have a rare chance to spawn a large butterfly when breeding.
-- **Spawns in:** Overworld (except cold biomes)
-- **Food:** Flowers
 
 ---
 

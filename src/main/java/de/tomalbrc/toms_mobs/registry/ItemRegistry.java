@@ -31,8 +31,10 @@ public class ItemRegistry {
     public static void registerItems() {
         CreativeModeTab ITEM_GROUP = new CreativeModeTab.Builder(null, -1)
                 .title(Component.literal("Toms Mobs Items").withStyle(ChatFormatting.BLUE))
-                .icon(EMPEROR_WING_PATTERN::getDefaultInstance)
-                .displayItems((parameters, output) -> CUSTOM_ITEMS.forEach((key, value) -> output.accept(value)))
+                .icon(PINK_ELEPHANT_HARNESS::getDefaultInstance)
+                .displayItems((parameters, output) -> CUSTOM_ITEMS.forEach((key, value) -> {
+                    if (value != EMPEROR_WING_PATTERN) output.accept(value);
+                }))
                 .build();
 
         PolymerCreativeModeTabUtils.registerPolymerCreativeModeTab(Util.id("items"), ITEM_GROUP);

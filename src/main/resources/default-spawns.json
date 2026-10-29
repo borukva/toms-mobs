@@ -40,37 +40,6 @@
     "max-group": 4
   },
   {
-    "mob": "toms_mobs:firemoth",
-    "biomes": [
-      "#c:is_nether_forest"
-    ],
-    "weight": 7,
-    "min-group": 2,
-    "max-group": 3
-  },
-  {
-    "mob": "toms_mobs:butterfly",
-    "biomes": [
-      "#c:is_birch_forest",
-      "#c:is_flower_forest",
-      "#c:is_floral",
-      "#c:is_plains"
-    ],
-    "weight": 5,
-    "min-group": 1,
-    "max-group": 2
-  },
-  {
-    "mob": "toms_mobs:emperor_butterfly",
-    "biomes": [
-      "#c:is_birch_forest",
-      "#c:is_flower_forest"
-    ],
-    "weight": 2,
-    "min-group": 1,
-    "max-group": 1
-  },
-  {
     "mob": "toms_mobs:capybara",
     "biomes": [
       "#c:is_swamp",
